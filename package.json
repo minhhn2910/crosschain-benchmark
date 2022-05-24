@@ -1,0 +1,14 @@
+{
+  "name": "crosschain-benchmark",
+  "version": "1.0.0",
+  "description": "benchmarking cross-chain tx",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "minhhn2910@github",
+  "license": "ISC",
+  "dependencies": {
+    "web3": "^1.7.3"
+  }
+}
