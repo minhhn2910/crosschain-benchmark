@@ -1,7 +1,7 @@
 const Web3 = require('web3');
 //const web3 = new Web3("http://localhost:7545");
-const web3 = new Web3("http://localhost:8545");
-const num_tx = 200;
+const web3 = new Web3("http://localhost:7777");
+const num_tx = 800;
 var tx_done_count = 0;
 web3.eth.getAccounts().then(accounts => {
 	console.log(accounts);
