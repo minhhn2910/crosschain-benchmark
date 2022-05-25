@@ -2,3 +2,4 @@ node_modules/
 package-lock.json
 test-dir-1/
 test-dir-2/
+test-chain-dir/

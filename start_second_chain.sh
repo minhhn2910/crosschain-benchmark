@@ -1,3 +1,1 @@
-rm -rf test-dir-2; geth --datadir test-dir-2 --http.port $1 --http --dev --http.corsdomain '*' --dev.period $2 --dev.gaslimit $3 --miner.gaslimit $3
-
-
+geth --datadir test-chain-dir/test-dir-2 --networkid 222 --http.port 8888 --http --dev --http.corsdomain '*' --dev.period $1 --dev.gaslimit $2 --miner.gaslimit $2 --miner.gasprice 0
