@@ -50,7 +50,8 @@ let SampleContract = new web3_1.eth.Contract(abi);
 // having problem using the same address asynchronously. Nonce management is a nightmare
 // current solution: create an account pool & transfer eth to all of them;
 const num_acc= 200;
-
+const gas_price_normal = web3_1.utils.toWei('1', 'gwei')  ;
+const gas_price_priority = web3_1.utils.toWei('10', 'gwei') ; 
 web3_1.eth.accounts.wallet.create(num_acc, '54674321§3456764321§345674321§3453647544±±±§±±±!!!43534534534534');
 //console.log(web3_1.eth.accounts.wallet[0].address);
 
@@ -73,11 +74,11 @@ function run_tx(contract_1,contract_2){
 		const acc2_addr = web3_1.eth.accounts.wallet[num_acc/2+i].address;
 		//console.log("START HTLC number ", i, " acc1 ", acc1_addr, " acc2 ", acc2_addr);
 		const hash_pair = newSecretHashPair();
-		console.log("START HTLC number ", i);
+		console.log("START HTLC ", i);
 		// console.log (hash_pair);
 
 		Contract_1.methods.newContract(acc2_addr, hash_pair.hash, Math.floor(Date.now() / 1000) + 3600)
-								.send({from: acc1_addr, gas: new_htlc_gas, value: web3_1.utils.toWei('1', 'ether')})
+								.send({from: acc1_addr, gas: new_htlc_gas, value: web3_1.utils.toWei('1', 'ether'), gasPrice: gas_price_normal})
 								.on('receipt', function(receipt){
 									
 									// console.log("gas used ", receipt.gasUsed);
@@ -85,23 +86,23 @@ function run_tx(contract_1,contract_2){
 									//console.log("contractid 1 ", contractId1);
 									//console.log("create contract 2");
 									Contract_2.methods.newContract(acc1_addr, hash_pair.hash, Math.floor(Date.now() / 1000) + 3600)
-									.send({from: acc2_addr, gas: new_htlc_gas, value: web3_1.utils.toWei('1', 'ether')})
+									.send({from: acc2_addr, gas: new_htlc_gas, value: web3_1.utils.toWei('1', 'ether') , gasPrice: gas_price_normal })
 									.on('receipt', function(receipt){
 										const contractId2 = receipt.events['LogHTLCNew'].returnValues.contractId;
 										// console.log("gas used ", receipt.gasUsed);
 										// console.log("contractid 2 ", contractId2);
 										
-										console.log("HTLC number ", i, " A withdraw contract 2 ");
-										Contract_2.methods.withdraw(contractId2,hash_pair.secret).send({from: acc1_addr, gas: withdraw_gas})
+										console.log("HTLC", i, " A withdraw contract 2 ");
+										Contract_2.methods.withdraw(contractId2,hash_pair.secret).send({from: acc1_addr, gas: withdraw_gas, gasPrice: gas_price_priority })
 														.on('receipt', function(receipt){
 															// console.log("gas used ", receipt.gasUsed);
 
-															console.log("HTLC number ", i," B withdraw contract 1 ");
+															console.log("HTLC ", i," B withdraw contract 1 ");
 															// console.log("i ", i, " acc1 ", acc1_addr, " acc2 ", acc2_addr, " contract_id ", contractId1, " secret ", hash_pair.secret);
-															Contract_1.methods.withdraw(contractId1,hash_pair.secret).send({from: acc2_addr, gas: withdraw_gas})
+															Contract_1.methods.withdraw(contractId1,hash_pair.secret).send({from: acc2_addr, gas: withdraw_gas, gasPrice: gas_price_priority })
 															.on('receipt', function(receipt){
 																// console.log("gas used ", receipt.gasUsed);
-																console.log("DONE HTLC number ", i);
+																console.log("DONE HTLC ", i);
 																count_htlc = count_htlc + 1;
 																if (count_htlc == num_acc/2){
 																	console.timeEnd('tx-loop');
