@@ -12,6 +12,7 @@ const {
 	txLoggedArgs,
   } = require('./utils')
 
+const { performance } = require('perf_hooks');
 
 const web3_1 = new Web3("http://localhost:7777");
 const web3_2 = new Web3("http://localhost:8888");
@@ -50,7 +51,16 @@ let SampleContract_2 = new web3_2.eth.Contract(abi);
 // https://github.com/ChainSafe/web3.js/issues/1846
 // having problem using the same address asynchronously. Nonce management is a nightmare
 // current solution: create an account pool & transfer eth to all of them;
-const num_acc= 200;
+// const num_acc= 200;
+var num_tx = 100;
+const myArgs = process.argv.slice(2);
+if (myArgs.length > 0)
+	num_tx = parseInt(myArgs);
+
+
+console.log("Running ", num_tx, " txs")
+
+const num_acc= num_tx*2;
 
 const gas_price_normal = web3_1.utils.toWei('1', 'gwei')  ;
 const gas_price_priority = web3_1.utils.toWei('1', 'gwei') ; 
@@ -72,8 +82,15 @@ function run_tx(contract_1,contract_2){
 	var Contract_2 = new web3_2.eth.Contract(abi, contract_2);
 	//A sends B 11ether, B sends A 1 ether
 	//console.log(newSecretHashPair(1));
-	console.time("tx-loop");
+	var start_block, end_block;
+	web3_1.eth.getBlockNumber()
+	.then( number => {
+		console.log("start at #blocknumber Chain1", number);
+		start_block = number;
+	});
+	console.time('tx-loop');
 	var count_htlc = 0;
+	var startTime = performance.now();
 	for (let i = 0; i < num_acc/2; i++) {
 		const acc1_addr_chain1 = web3_1.eth.accounts.wallet[i].address;
 		const acc2_addr_chain1 = web3_1.eth.accounts.wallet[num_acc/2+i].address;
@@ -85,7 +102,7 @@ function run_tx(contract_1,contract_2){
 		const hash_pair = newSecretHashPair();
 		console.log("START HTLC ", i);
 		// console.log (hash_pair);
-
+		
 		Contract_1.methods.newContract(acc2_addr_chain1, hash_pair.hash, Math.floor(Date.now() / 1000) + 3600)
 								.send({from: acc1_addr_chain1, gas: new_htlc_gas, value: web3_1.utils.toWei('1', 'ether'), gasPrice: gas_price_normal})
 								.on('receipt', function(receipt){
@@ -113,8 +130,19 @@ function run_tx(contract_1,contract_2){
 																// console.log("gas used ", receipt.gasUsed);
 																console.log("DONE HTLC ", i);
 																count_htlc = count_htlc + 1;
+																
 																if (count_htlc == num_acc/2){
 																	console.timeEnd('tx-loop');
+																	
+																	var endTime = performance.now();
+																	console.log("Elapsed time ", (endTime-startTime)/1000, " sec");
+																	console.log("Estimated TPS: ", count_htlc/((endTime-startTime)/1000));
+																	web3_1.eth.getBlockNumber()
+																	.then( number => {
+																		end_block = number;
+																		console.log("number of Blocks passed in chain1 ", end_block - start_block);
+																		
+																	});
 																}
 															});
 														});
@@ -125,30 +153,46 @@ function run_tx(contract_1,contract_2){
 	}
 								
 }
+function delayed_run_tx(contract_1, contract_2){
+	sleep(1000).then(() => {
+		run_tx(contract_1,contract_2);
+	});
+}
+
 function deploy_htlpwrapper(){
 	console.log("deploy_htlcwrapper");
 	var deployed_count = 0;
 	var contract_1, contract_2;
-	let contract1 = SampleContract_1.deploy({data: code}).send({from: web3_1.eth.accounts.wallet[0].address, gas: 2000000, gasPrice: 0}).on('receipt', function(receipt){
+	let contract1 = SampleContract_1.deploy({data: code}).send({from: web3_1.eth.accounts.wallet[0].address, gas: 1900000, gasPrice: 0}).on('receipt', function(receipt){
 		console.log("deployed contract 1 ",receipt.contractAddress);
 		deployed_count = deployed_count + 1;
 		contract_1 = receipt.contractAddress; 
 		if (deployed_count ==2 ){
-			run_tx(contract_1,contract_2);
+			delayed_run_tx(contract_1,contract_2);
 		}
 
 	});
 
 
-	let contract2 = SampleContract_2.deploy({data: code}).send({from: web3_2.eth.accounts.wallet[1].address , gas: 2000000, gasPrice: 0}).on('receipt', function(receipt){
+	let contract2 = SampleContract_2.deploy({data: code}).send({from: web3_2.eth.accounts.wallet[1].address , gas: 1900000, gasPrice: 0}).on('receipt', function(receipt){
 		console.log("deployed contract 2 ",receipt.contractAddress);
 		deployed_count = deployed_count + 1;
 		contract_2 = receipt.contractAddress; 
 		if (deployed_count ==2 ){
-			run_tx(contract_1,contract_2);
+			delayed_run_tx(contract_1,contract_2);
 		}
 	});
 	
+}
+
+function sleep (time) {
+	return new Promise((resolve) => setTimeout(resolve, time));
+  }
+  
+function delayed_deploy_htlpwrapper(){
+	sleep(1000).then(() => {
+		deploy_htlpwrapper()
+	});
 }
 
 var funded_chain = 0; 
@@ -167,7 +211,7 @@ web3_1.eth.getAccounts().then(accounts =>{
 				console.log("done funding chain1 ");
 				funded_chain = funded_chain + 1;
 				if (funded_chain == 2)
-					deploy_htlpwrapper();
+					delayed_deploy_htlpwrapper();
 			}
 		});
 	}
@@ -187,7 +231,7 @@ web3_2.eth.getAccounts().then(accounts =>{
 				console.log("done funding chain2 ");
 				funded_chain = funded_chain + 1;
 				if (funded_chain == 2)
-					deploy_htlpwrapper();
+					delayed_deploy_htlpwrapper();
 			}
 		});
 	}

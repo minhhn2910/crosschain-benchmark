@@ -12,7 +12,7 @@ const {
 	txLoggedArgs,
   } = require('./utils')
 
-
+const { performance } = require('perf_hooks');
 const web3_1 = new Web3("http://localhost:7777");
 let fs = require("fs");
 

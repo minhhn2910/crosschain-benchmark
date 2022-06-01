@@ -11,6 +11,9 @@
   "dependencies": {
     "crypto": "^1.0.1",
     "fs": "^0.0.1-security",
-    "web3": "^1.7.3"
+    "ganache": "^7.2.0",
+    "net": "^1.0.2",
+    "web3": "^1.7.3",
+    "web3-providers-ipc": "^1.7.3"
   }
 }
