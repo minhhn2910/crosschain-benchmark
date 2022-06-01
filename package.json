@@ -11,7 +11,6 @@
   "dependencies": {
     "crypto": "^1.0.1",
     "fs": "^0.0.1-security",
-    "solc": "^0.5.0",
     "web3": "^1.7.3"
   }
 }

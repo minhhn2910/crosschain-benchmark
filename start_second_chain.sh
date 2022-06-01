@@ -1,1 +1,1 @@
-geth --datadir test-chain-dir/test-dir-2 --networkid 222 --http.port 8888 --http --dev --http.corsdomain '*' --dev.period $1 --dev.gaslimit $2 --miner.gaslimit $2 --miner.gasprice 0
+geth --datadir test-chain-dir/test-dir-2 --networkid 222  --ipcpath test-chain-dir/chain2-ipc --http.port 8888 --http --dev --http.corsdomain '*' --dev.period $1 --dev.gaslimit $2 --miner.gaslimit $2 --miner.gasprice 0
